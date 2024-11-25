@@ -3,9 +3,7 @@ import express from 'express';
 import cors from "cors";
 import { MongoClient } from 'mongodb';
 import { moviesRouter } from './routes/movies.js';
-import { usersRouter } from './routes/users.js';
 import dotenv from 'dotenv';
-
  dotenv.config();
 console.log(process.env.MONGO_URL);
 const app = express();
@@ -24,7 +22,6 @@ app.get('/', function (req, res) {
 
 app.use(cors());
 app.use('/movies',moviesRouter);
-app.use('/users',usersRouter);
 app.listen(PORT,function()
 {console.log('server start from PORT 4000')});
 
@@ -35,11 +32,6 @@ export async function getMovieById(id) {
   return await client.db("b30wd").collection("movies")
     .findOne({ id: id });
 }
-export async function getUserByName(username) {
-  return await client.db("b30wd").collection("users")
-    .findOne({ username:username});
-}
-
 export async function getAllMovies() {
   await client.db("b30wd").collection("movies")
     .find({})
@@ -59,10 +51,7 @@ export async function updateMovie(id, updateData) {
     .collection("movies") 
     .updateOne({ id: id }, { $set: updateData });
 }
-export async function createUser(data) {
-  return await client.db("b30wd")
-    .collection("users").insertOne(data);
-}
+
 
 //routes/movies.js
 import express from "express";
@@ -121,43 +110,3 @@ router.get("/",async function (req, res) {
       export const moviesRouter=router;
 
 
-
- //routes/user.js
-      import express from "express";
-import bcrypt from "bcrypt";
-import {createUser,getUserByName} from '../helper.js';
-const router=express.Router();
-async function genPassword(password){
-    const salt=await bcrypt.genSalt(10)
-  const hashPassword=await bcrypt.hash(password,salt);
-  console.log({salt,hashPassword});
-  return hashPassword;
-  }
-  router.post("/signup", async function (req, res) {// db.users.insertOne(data)
-      const {username,password}= req.body;
-      const hashPassword=await genPassword(password) ;
-      const newUser={
-          username:username,
-          password:hashPassword,
-      }
-      console.log(newUser);
-      const result = await createUser(newUser);
-      res.send(result);});
-
-      router.post("/login", async function (req, res)
-       {const { username, password } = req.body;
-      // db.users.findOne({username: "tamil"})
-      const userFromDB = await getUserByName(username);
-      console.log(userFromDB);
-      if (!userFromDB) 
-      {res.status(401).send({ message: "Invalid credentials" });
-    } 
-    else {const storedPassword = userFromDB.password; // hashed password
-    const isPasswordMatch = await bcrypt.compare(password, storedPassword);
-    console.log("isPasswordMatch", isPasswordMatch);
-    if (isPasswordMatch) {res.send({ message: "Successfull login" });} 
-    else {res.status(401).send({ message: "Invalid credentials" });}}});
-             
-      
-
-      export const usersRouter=router;
